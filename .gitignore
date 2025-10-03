@@ -1,0 +1,8 @@
+node_modules/
+uploads/*.mp3
+*.log
+.env
+.DS_Store
+Thumbs.db
+.vscode/
+.idea/

@@ -1,0 +1,76 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>SyncMusic - Salles de Musique Synchronisées</title>
+    <link rel="stylesheet" href="style.css">
+</head>
+<body>
+    <div class="container">
+        <header>
+            <h1>🎵 SyncMusic</h1>
+            <p>Écoutez de la musique ensemble, en synchronisation</p>
+        </header>
+
+        <div class="room-section">
+            <div class="room-controls">
+                <input type="text" id="roomInput" placeholder="Nom de la salle (ex: ma-salle-cool)">
+                <button id="joinRoomBtn">Rejoindre/Créer Salle</button>
+            </div>
+            
+            <div id="currentRoom" class="hidden">
+                <h2>Salle: <span id="roomName"></span></h2>
+                <div class="room-info">
+                    <span id="userCount">0 utilisateur(s)</span>
+                    <button id="leaveRoomBtn">Quitter la salle</button>
+                </div>
+            </div>
+        </div>
+
+        <div id="musicSection" class="hidden">
+            <!-- Upload de fichier -->
+            <div class="upload-section">
+                <h3>📁 Ajouter une musique</h3>
+                <div class="upload-area" id="uploadArea">
+                    <input type="file" id="fileInput" accept=".mp3,audio/mpeg" hidden>
+                    <div class="upload-content">
+                        <div class="upload-icon">🎵</div>
+                        <p>Cliquez ici ou glissez un fichier MP3</p>
+                        <small>Taille max: 50MB</small>
+                    </div>
+                </div>
+                <div id="uploadStatus"></div>
+            </div>
+
+            <!-- Lecteur audio -->
+            <div class="player-section">
+                <h3>🎶 Lecture en cours</h3>
+                <div id="currentSongInfo" class="song-info">
+                    <p>Aucune musique en cours...</p>
+                </div>
+                <audio id="audioPlayer" preload="metadata" style="display: none;"></audio>
+                <div class="player-controls">
+                    <button id="skipBtn" disabled>
+                        ⏭️ Skip (<span id="skipVotes">0</span>/<span id="requiredVotes">1</span>)
+                    </button>
+                </div>
+            </div>
+
+            <!-- Queue -->
+            <div class="queue-section">
+                <h3>📋 File d'attente</h3>
+                <div id="queueList" class="queue-list">
+                    <p class="empty-queue">La file d'attente est vide</p>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Messages de statut -->
+    <div id="statusMessages" class="status-messages"></div>
+
+    <script src="/socket.io/socket.io.js"></script>
+    <script src="script.js"></script>
+</body>
+</html>
