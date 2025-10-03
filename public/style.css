@@ -87,10 +87,12 @@ h3 {
     display: flex;
     gap: 1rem;
     margin-bottom: 1rem;
+    flex-wrap: wrap;
 }
 
 .room-controls input {
     flex: 1;
+    min-width: 200px;
     padding: 0.75rem;
     border: 2px solid var(--border-color);
     border-radius: 8px;
@@ -103,6 +105,70 @@ h3 {
 .room-controls input:focus {
     outline: none;
     border-color: var(--primary-color);
+}
+
+/* Available rooms */
+.available-rooms {
+    margin-bottom: 1.5rem;
+}
+
+.available-rooms h3 {
+    margin-bottom: 1rem;
+    font-size: 1.1rem;
+}
+
+.rooms-list {
+    max-height: 200px;
+    overflow-y: auto;
+    border: 1px solid var(--border-color);
+    border-radius: 8px;
+    background: var(--surface-light);
+}
+
+.room-item {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 0.75rem 1rem;
+    border-bottom: 1px solid var(--border-color);
+    transition: background-color 0.3s ease;
+    cursor: pointer;
+}
+
+.room-item:last-child {
+    border-bottom: none;
+}
+
+.room-item:hover {
+    background: rgba(99, 102, 241, 0.1);
+}
+
+.room-item-info h4 {
+    margin: 0 0 0.25rem 0;
+    color: var(--text-color);
+    font-size: 1rem;
+}
+
+.room-item-info small {
+    color: var(--text-muted);
+}
+
+.room-item-actions {
+    display: flex;
+    gap: 0.5rem;
+}
+
+.room-item-actions button {
+    padding: 0.5rem 1rem;
+    font-size: 0.9rem;
+    background: var(--primary-color);
+}
+
+.loading-rooms, .no-rooms {
+    text-align: center;
+    color: var(--text-muted);
+    font-style: italic;
+    padding: 1rem;
 }
 
 .room-info {

@@ -17,6 +17,15 @@
             <div class="room-controls">
                 <input type="text" id="roomInput" placeholder="Nom de la salle (ex: ma-salle-cool)">
                 <button id="joinRoomBtn">Rejoindre/Créer Salle</button>
+                <button id="refreshRoomsBtn">🔄 Rafraîchir</button>
+            </div>
+
+            <!-- Liste des salles disponibles -->
+            <div class="available-rooms">
+                <h3>🏠 Salles disponibles</h3>
+                <div id="roomsList" class="rooms-list">
+                    <p class="loading-rooms">Chargement des salles...</p>
+                </div>
             </div>
             
             <div id="currentRoom" class="hidden">

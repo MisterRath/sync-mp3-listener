@@ -162,6 +162,9 @@ app.post('/upload/:roomId', upload.single('mp3file'), (req, res) => {
 
     // Notifier tous les utilisateurs de la salle
     io.to(roomId).emit('roomUpdate', room.getRoomState());
+    
+    // Mettre à jour la liste des salles pour tous
+    broadcastRoomsList();
 
     res.json({ 
       message: 'Fichier uploadé avec succès', 
@@ -184,6 +187,26 @@ app.get('/room/:roomId/state', (req, res) => {
   }
 
   res.json(room.getRoomState());
+});
+
+app.get('/api/rooms', (req, res) => {
+  try {
+    const roomsList = Array.from(rooms.values()).map(room => ({
+      id: room.id,
+      userCount: room.users.size,
+      currentSong: room.currentSong ? {
+        originalName: room.currentSong.originalName,
+        uploadedAt: room.currentSong.uploadedAt
+      } : null,
+      queueLength: room.queue.length,
+      isPlaying: room.isPlaying
+    }));
+    
+    res.json(roomsList);
+  } catch (error) {
+    console.error('Erreur lors de la récupération des salles:', error);
+    res.status(500).json({ error: 'Erreur serveur' });
+  }
 });
 
 // Socket.IO pour la synchronisation en temps réel
@@ -209,6 +232,9 @@ io.on('connection', (socket) => {
       userCount: room.users.size 
     });
 
+    // Notifier tous les clients de la mise à jour de la liste des salles
+    broadcastRoomsList();
+
     console.log(`Utilisateur ${socket.id} a rejoint la salle ${roomId}`);
   });
 
@@ -222,12 +248,14 @@ io.on('connection', (socket) => {
       if (room.users.size === 0) {
         rooms.delete(roomId);
         console.log(`Salle ${roomId} supprimée (vide)`);
+        broadcastRoomsList();
       } else {
         socket.to(roomId).emit('userLeft', { 
           userId: socket.id, 
           userCount: room.users.size 
         });
         socket.to(roomId).emit('roomUpdate', room.getRoomState());
+        broadcastRoomsList();
       }
     }
   });
@@ -272,17 +300,35 @@ io.on('connection', (socket) => {
         
         if (room.users.size === 0) {
           rooms.delete(roomId);
+          broadcastRoomsList();
         } else {
           socket.to(roomId).emit('userLeft', { 
             userId: socket.id, 
             userCount: room.users.size 
           });
           socket.to(roomId).emit('roomUpdate', room.getRoomState());
+          broadcastRoomsList();
         }
       }
     }
   });
 });
+
+// Fonction pour diffuser la liste des salles à tous les clients connectés
+function broadcastRoomsList() {
+  const roomsList = Array.from(rooms.values()).map(room => ({
+    id: room.id,
+    userCount: room.users.size,
+    currentSong: room.currentSong ? {
+      originalName: room.currentSong.originalName,
+      uploadedAt: room.currentSong.uploadedAt
+    } : null,
+    queueLength: room.queue.length,
+    isPlaying: room.isPlaying
+  }));
+  
+  io.emit('roomsListUpdate', roomsList);
+}
 
 // Gestion des erreurs
 app.use((error, req, res, next) => {

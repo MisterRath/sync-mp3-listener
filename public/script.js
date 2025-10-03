@@ -7,11 +7,13 @@ let isAudioSyncing = false;
 // Éléments DOM
 const roomInput = document.getElementById('roomInput');
 const joinRoomBtn = document.getElementById('joinRoomBtn');
+const refreshRoomsBtn = document.getElementById('refreshRoomsBtn');
 const leaveRoomBtn = document.getElementById('leaveRoomBtn');
 const currentRoomDiv = document.getElementById('currentRoom');
 const musicSection = document.getElementById('musicSection');
 const roomNameSpan = document.getElementById('roomName');
 const userCountSpan = document.getElementById('userCount');
+const roomsList = document.getElementById('roomsList');
 const fileInput = document.getElementById('fileInput');
 const uploadArea = document.getElementById('uploadArea');
 const uploadStatus = document.getElementById('uploadStatus');
@@ -27,6 +29,7 @@ const statusMessages = document.getElementById('statusMessages');
 document.addEventListener('DOMContentLoaded', () => {
     initializeSocket();
     setupEventListeners();
+    loadAvailableRooms();
 });
 
 function initializeSocket() {
@@ -61,6 +64,10 @@ function initializeSocket() {
     socket.on('autoPlayNext', (nextSong) => {
         showStatus(`Lecture automatique: ${nextSong.originalName}`, 'success');
     });
+    
+    socket.on('roomsListUpdate', (rooms) => {
+        updateRoomsList(rooms);
+    });
 }
 
 function setupEventListeners() {
@@ -72,6 +79,9 @@ function setupEventListeners() {
     
     // Quitter une salle
     leaveRoomBtn.addEventListener('click', leaveRoom);
+    
+    // Rafraîchir la liste des salles
+    refreshRoomsBtn.addEventListener('click', loadAvailableRooms);
     
     // Upload de fichier
     uploadArea.addEventListener('click', () => fileInput.click());
@@ -145,6 +155,9 @@ function leaveRoom() {
         // Arrêter la musique
         audioPlayer.pause();
         audioPlayer.src = '';
+        
+        // Recharger la liste des salles
+        loadAvailableRooms();
         
         showStatus('Salle quittée', 'warning');
     }
@@ -333,6 +346,47 @@ async function uploadFile(file) {
         uploadStatus.innerHTML = `<p style="color: var(--error-color);">❌ ${error.message}</p>`;
         showStatus(`Erreur: ${error.message}`, 'error');
     }
+}
+
+// Gestion des salles disponibles
+async function loadAvailableRooms() {
+    try {
+        roomsList.innerHTML = '<p class="loading-rooms">Chargement des salles...</p>';
+        
+        const response = await fetch('/api/rooms');
+        const rooms = await response.json();
+        
+        updateRoomsList(rooms);
+    } catch (error) {
+        console.error('Erreur lors du chargement des salles:', error);
+        roomsList.innerHTML = '<p class="no-rooms">Erreur lors du chargement</p>';
+    }
+}
+
+function updateRoomsList(rooms) {
+    if (rooms.length === 0) {
+        roomsList.innerHTML = '<p class="no-rooms">Aucune salle active</p>';
+        return;
+    }
+    
+    roomsList.innerHTML = rooms.map(room => `
+        <div class="room-item" onclick="joinRoomById('${room.id}')">
+            <div class="room-item-info">
+                <h4>${room.id}</h4>
+                <small>${room.userCount} utilisateur(s) • ${room.currentSong ? `🎵 ${room.currentSong.originalName}` : 'Aucune musique'}</small>
+            </div>
+            <div class="room-item-actions">
+                <button onclick="event.stopPropagation(); joinRoomById('${room.id}')">
+                    Rejoindre
+                </button>
+            </div>
+        </div>
+    `).join('');
+}
+
+function joinRoomById(roomId) {
+    roomInput.value = roomId;
+    joinRoom();
 }
 
 // Gestion de la synchronisation audio
