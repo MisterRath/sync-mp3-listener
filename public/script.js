@@ -122,6 +122,12 @@ function setupEventListeners() {
     audioPlayer.addEventListener('play', handleAudioPlay);
     audioPlayer.addEventListener('pause', handleAudioPause);
     
+    // Contrôle du volume
+    const volumeSlider = document.getElementById('volumeSlider');
+    volumeSlider.addEventListener('input', (e) => {
+        audioPlayer.volume = e.target.value;
+    });
+    
     // Variables pour la synchronisation
     window.roomStartTime = null;
     window.isRoomPlaying = false;

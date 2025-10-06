@@ -100,6 +100,7 @@ h3 {
     color: var(--text-color);
     font-size: 1rem;
     transition: border-color 0.3s ease;
+    appearance: none;
 }
 
 .room-controls input:focus {
@@ -403,6 +404,44 @@ audio {
 
 .fade-in {
     animation: fadeIn 0.5s ease;
+}
+
+/* Volume control */
+.volume-control {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+    margin-top: 1rem;
+}
+
+.volume-control label {
+    color: var(--text-color);
+    font-size: 1rem;
+}
+
+.volume-control input[type="range"] {
+    flex: 1;
+    -webkit-appearance: none;
+    appearance: none;
+    height: 6px;
+    border-radius: 5px;
+    background: var(--border-color);
+    outline: none;
+    transition: background 0.3s;
+}
+
+.volume-control input[type="range"]::-webkit-slider-thumb {
+    -webkit-appearance: none;
+    appearance: none;
+    width: 15px;
+    height: 15px;
+    border-radius: 50%;
+    background: var(--primary-color);
+    cursor: pointer;
+}
+
+.volume-control input[type="range"]:hover {
+    background: var(--primary-dark);
 }
 
 /* Responsive */
