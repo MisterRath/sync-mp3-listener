@@ -64,12 +64,6 @@
                         ⏭️ Skip (<span id="skipVotes">0</span>/<span id="requiredVotes">1</span>)
                     </button>
                 </div>
-
-                <!-- Contrôle de volume -->
-                <div class="volume-control">
-                    <label for="volumeSlider">🔊 Volume</label>
-                    <input type="range" id="volumeSlider" min="0" max="1" step="0.01" value="1">
-                </div>
             </div>
 
             <!-- Queue -->
@@ -84,6 +78,12 @@
 
     <!-- Messages de statut -->
     <div id="statusMessages" class="status-messages"></div>
+
+    <!-- Contrôle de volume persistant -->
+    <div class="volume-bar">
+        <label for="volumeSlider">Volume:</label>
+        <input id="volumeSlider" type="range" min="0" max="1" step="0.01" value="0.5">
+    </div>
 
     <script src="/socket.io/socket.io.js"></script>
     <script src="script.js"></script>

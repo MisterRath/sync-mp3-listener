@@ -446,6 +446,27 @@ audio {
     background: var(--primary-dark);
 }
 
+/* Persistent volume control bar */
+.volume-bar {
+    position: fixed;
+    bottom: 0;
+    left: 0;
+    width: 100%;
+    background: var(--surface-color);
+    border-top: 1px solid var(--border-color);
+    padding: 0.5rem 1rem;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    z-index: 1000;
+}
+
+.volume-bar input[type="range"] {
+    flex: 1;
+    max-width: 300px;
+    margin: 0 1rem;
+}
+
 /* Responsive */
 @media (max-width: 768px) {
     .container {
