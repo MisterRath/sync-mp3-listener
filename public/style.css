@@ -428,6 +428,8 @@ audio {
     background: var(--border-color);
     outline: none;
     transition: background 0.3s;
+    /* Increase the number of steps for finer control */
+    step: 0.01;
 }
 
 .volume-control input[type="range"]::-webkit-slider-thumb {
