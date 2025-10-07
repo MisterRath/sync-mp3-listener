@@ -17,6 +17,9 @@ const roomsList = document.getElementById('roomsList');
 const fileInput = document.getElementById('fileInput');
 const uploadArea = document.getElementById('uploadArea');
 const uploadStatus = document.getElementById('uploadStatus');
+const youtubeInput = document.getElementById('youtubeInput');
+const downloadYoutubeBtn = document.getElementById('downloadYoutubeBtn');
+const youtubeStatus = document.getElementById('youtubeStatus');
 const currentSongInfo = document.getElementById('currentSongInfo');
 const audioPlayer = document.getElementById('audioPlayer');
 const skipBtn = document.getElementById('skipBtn');
@@ -89,6 +92,12 @@ function setupEventListeners() {
     uploadArea.addEventListener('drop', handleDrop);
     uploadArea.addEventListener('dragleave', handleDragLeave);
     fileInput.addEventListener('change', handleFileSelect);
+    
+    // YouTube
+    downloadYoutubeBtn.addEventListener('click', downloadYoutube);
+    youtubeInput.addEventListener('keypress', (e) => {
+        if (e.key === 'Enter') downloadYoutube();
+    });
     
     // Contrôles du lecteur
     skipBtn.addEventListener('click', voteSkip);
@@ -199,10 +208,13 @@ function updateUserCount(count) {
 }
 
 function updateCurrentSong(song, startTime, isPlaying) {
+    const sourceIcon = song.source === 'youtube' ? '🎬' : '📁';
+    const sourceText = song.source === 'youtube' ? 'YouTube' : 'Upload';
     const playingIcon = isPlaying ? '<span class="playing-indicator">🎵</span>' : '';
+    
     currentSongInfo.innerHTML = `
         <p>${playingIcon}<strong>${song.originalName}</strong></p>
-        <small>Ajouté le ${new Date(song.uploadedAt).toLocaleString()}</small>
+        <small>${sourceIcon} Source: ${sourceText} • Ajouté le ${new Date(song.uploadedAt).toLocaleString()}</small>
         ${isPlaying ? '<small style="color: var(--success-color); font-weight: bold;">🔊 Lecture automatique en cours...</small>' : ''}
     `;
     
@@ -256,14 +268,19 @@ function updateQueue(queue) {
         return;
     }
     
-    queueList.innerHTML = queue.map((song, index) => `
-        <div class="queue-item">
-            <div class="queue-item-info">
-                <h4>${index + 1}. ${song.originalName}</h4>
-                <small>Ajouté le ${new Date(song.uploadedAt).toLocaleString()}</small>
+    queueList.innerHTML = queue.map((song, index) => {
+        const sourceIcon = song.source === 'youtube' ? '🎬' : '📁';
+        const sourceText = song.source === 'youtube' ? 'YouTube' : 'Upload';
+        
+        return `
+            <div class="queue-item">
+                <div class="queue-item-info">
+                    <h4>${index + 1}. ${song.originalName}</h4>
+                    <small>${sourceIcon} ${sourceText} • Ajouté le ${new Date(song.uploadedAt).toLocaleString()}</small>
+                </div>
             </div>
-        </div>
-    `).join('');
+        `;
+    }).join('');
 }
 
 function voteSkip() {
@@ -351,6 +368,76 @@ async function uploadFile(file) {
         console.error('Erreur upload:', error);
         uploadStatus.innerHTML = `<p style="color: var(--error-color);">❌ ${error.message}</p>`;
         showStatus(`Erreur: ${error.message}`, 'error');
+    }
+}
+
+// Téléchargement YouTube
+async function downloadYoutube() {
+    const url = youtubeInput.value.trim();
+    
+    if (!currentRoom) {
+        showStatus('Veuillez d\'abord rejoindre une salle', 'error');
+        return;
+    }
+    
+    if (!url) {
+        showStatus('Veuillez entrer une URL YouTube', 'error');
+        return;
+    }
+    
+    // Validation simple de l'URL YouTube
+    const youtubeRegex = /^(https?:\/\/)?(www\.)?(youtube|youtu|youtube-nocookie)\.(com|be)\/(watch\?v=|embed\/|v\/|.+\?v=)?([^&=%\?]{11})/;
+    if (!youtubeRegex.test(url)) {
+        showStatus('URL YouTube invalide', 'error');
+        youtubeStatus.innerHTML = '<div class="error">❌ Veuillez entrer une URL YouTube valide</div>';
+        youtubeStatus.className = 'youtube-status error';
+        return;
+    }
+    
+    try {
+        // Interface de chargement
+        downloadYoutubeBtn.disabled = true;
+        downloadYoutubeBtn.querySelector('.btn-text').classList.add('hidden');
+        downloadYoutubeBtn.querySelector('.btn-loading').classList.remove('hidden');
+        
+        youtubeStatus.innerHTML = '<div class="loading">⏳ Téléchargement de l\'audio en cours...</div>';
+        youtubeStatus.className = 'youtube-status loading';
+        
+        const response = await fetch(`/youtube/${currentRoom}`, {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json'
+            },
+            body: JSON.stringify({ url })
+        });
+        
+        const result = await response.json();
+        
+        if (response.ok) {
+            youtubeStatus.innerHTML = '<div class="success">✅ Audio téléchargé et ajouté à la file d\'attente!</div>';
+            youtubeStatus.className = 'youtube-status success';
+            showStatus(`Musique YouTube ajoutée: ${result.song.originalName}`, 'success');
+            
+            // Vider le champ
+            youtubeInput.value = '';
+            
+            setTimeout(() => {
+                youtubeStatus.innerHTML = '';
+                youtubeStatus.className = '';
+            }, 5000);
+        } else {
+            throw new Error(result.error || 'Erreur de téléchargement');
+        }
+    } catch (error) {
+        console.error('Erreur téléchargement YouTube:', error);
+        youtubeStatus.innerHTML = `<div class="error">❌ ${error.message}</div>`;
+        youtubeStatus.className = 'youtube-status error';
+        showStatus(`Erreur YouTube: ${error.message}`, 'error');
+    } finally {
+        // Réactiver le bouton
+        downloadYoutubeBtn.disabled = false;
+        downloadYoutubeBtn.querySelector('.btn-text').classList.remove('hidden');
+        downloadYoutubeBtn.querySelector('.btn-loading').classList.add('hidden');
     }
 }
 

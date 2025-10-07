@@ -60,6 +60,7 @@ header p {
 /* Cards */
 .room-section,
 .upload-section,
+.youtube-section,
 .player-section,
 .queue-section {
     background: var(--surface-color);
@@ -252,6 +253,109 @@ button.danger:hover:not(:disabled) {
     color: var(--text-muted);
 }
 
+/* YouTube section */
+.youtube-section {
+    border: 2px solid #ff0000;
+    background: linear-gradient(135deg, var(--surface-color) 0%, rgba(255, 0, 0, 0.05) 100%);
+}
+
+.youtube-input-area {
+    display: flex;
+    gap: 1rem;
+    margin-bottom: 1rem;
+    flex-wrap: wrap;
+}
+
+.youtube-input {
+    flex: 1;
+    min-width: 300px;
+    padding: 0.75rem;
+    border: 2px solid var(--border-color);
+    border-radius: 8px;
+    background: var(--surface-light);
+    color: var(--text-color);
+    font-size: 1rem;
+    transition: border-color 0.3s ease;
+    appearance: none;
+}
+
+.youtube-input:focus {
+    outline: none;
+    border-color: #ff0000;
+}
+
+.youtube-input::placeholder {
+    color: var(--text-muted);
+}
+
+.youtube-btn {
+    background: linear-gradient(135deg, #ff0000, #cc0000);
+    color: white;
+    border: none;
+    padding: 0.75rem 1.5rem;
+    border-radius: 8px;
+    cursor: pointer;
+    font-size: 1rem;
+    font-weight: 600;
+    transition: all 0.3s ease;
+    display: inline-flex;
+    align-items: center;
+    gap: 0.5rem;
+    position: relative;
+    overflow: hidden;
+}
+
+.youtube-btn:hover:not(:disabled) {
+    background: linear-gradient(135deg, #cc0000, #990000);
+    transform: translateY(-1px);
+}
+
+.youtube-btn:disabled {
+    background: var(--border-color);
+    cursor: not-allowed;
+    transform: none;
+}
+
+.youtube-btn .btn-loading {
+    position: absolute;
+    top: 50%;
+    left: 50%;
+    transform: translate(-50%, -50%);
+}
+
+.youtube-status {
+    margin-top: 1rem;
+    padding: 0.75rem;
+    border-radius: 8px;
+    font-weight: 500;
+}
+
+.youtube-status.success {
+    background: rgba(16, 185, 129, 0.1);
+    border: 1px solid var(--success-color);
+    color: var(--success-color);
+}
+
+.youtube-status.error {
+    background: rgba(239, 68, 68, 0.1);
+    border: 1px solid var(--error-color);
+    color: var(--error-color);
+}
+
+.youtube-status.loading {
+    background: rgba(245, 158, 11, 0.1);
+    border: 1px solid var(--warning-color);
+    color: var(--warning-color);
+}
+
+.youtube-help {
+    display: block;
+    color: var(--text-muted);
+    font-style: italic;
+    margin-top: 0.5rem;
+    line-height: 1.4;
+}
+
 /* Song info */
 .song-info {
     background: var(--surface-light);
@@ -428,8 +532,6 @@ audio {
     background: var(--border-color);
     outline: none;
     transition: background 0.3s;
-    /* Increase the number of steps for finer control */
-    step: 0.01;
 }
 
 .volume-control input[type="range"]::-webkit-slider-thumb {

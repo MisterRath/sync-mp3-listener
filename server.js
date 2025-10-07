@@ -6,6 +6,7 @@ const path = require('path');
 const fs = require('fs');
 const { v4: uuidv4 } = require('uuid');
 const cors = require('cors');
+const YTDlpWrap = require('yt-dlp-wrap').default;
 
 const app = express();
 const server = http.createServer(app);
@@ -19,10 +20,31 @@ const io = socketIo(server, {
 // Configuration
 const PORT = process.env.PORT || 3000;
 const UPLOAD_DIR = 'uploads';
+const YOUTUBE_CACHE_DIR = 'youtube_cache';
 
-// Créer le dossier uploads s'il n'existe pas
+// Créer les dossiers s'ils n'existent pas
 if (!fs.existsSync(UPLOAD_DIR)) {
   fs.mkdirSync(UPLOAD_DIR, { recursive: true });
+}
+
+if (!fs.existsSync(YOUTUBE_CACHE_DIR)) {
+  fs.mkdirSync(YOUTUBE_CACHE_DIR, { recursive: true });
+}
+
+// Initialiser yt-dlp
+const ytDlpWrap = new YTDlpWrap();
+
+// Configuration du chemin Python pour Windows
+if (process.platform === 'win32') {
+  try {
+    const pythonPath = path.join(__dirname, '.venv', 'Scripts', 'python.exe');
+    if (fs.existsSync(pythonPath)) {
+      ytDlpWrap.setPythonPath(pythonPath);
+      console.log('Utilisation de Python depuis .venv');
+    }
+  } catch (error) {
+    console.log('Utilisation de Python système par défaut');
+  }
 }
 
 // Middleware
@@ -30,6 +52,7 @@ app.use(cors());
 app.use(express.json());
 app.use(express.static('public'));
 app.use('/uploads', express.static(UPLOAD_DIR));
+app.use('/youtube', express.static(YOUTUBE_CACHE_DIR));
 
 // Configuration multer pour l'upload des fichiers MP3
 const storage = multer.diskStorage({
@@ -155,7 +178,8 @@ app.post('/upload/:roomId', upload.single('mp3file'), (req, res) => {
       filename: req.file.filename,
       originalName: req.file.originalname,
       path: `/uploads/${req.file.filename}`,
-      uploadedAt: new Date().toISOString()
+      uploadedAt: new Date().toISOString(),
+      source: 'upload'
     };
 
     room.addToQueue(song);
@@ -175,6 +199,118 @@ app.post('/upload/:roomId', upload.single('mp3file'), (req, res) => {
   } catch (error) {
     console.error('Erreur upload:', error);
     res.status(500).json({ error: 'Erreur lors de l\'upload' });
+  }
+});
+
+// Route pour télécharger l'audio depuis YouTube
+app.post('/youtube/:roomId', async (req, res) => {
+  try {
+    const { url } = req.body;
+    const roomId = req.params.roomId;
+
+    if (!url) {
+      return res.status(400).json({ error: 'URL YouTube requise' });
+    }
+
+    const room = rooms.get(roomId);
+    if (!room) {
+      return res.status(404).json({ error: 'Salle introuvable' });
+    }
+
+    // Validation de l'URL YouTube
+    const youtubeRegex = /^(https?:\/\/)?(www\.)?(youtube|youtu|youtube-nocookie)\.(com|be)\/(watch\?v=|embed\/|v\/|.+\?v=)?([^&=%\?]{11})/;
+    if (!youtubeRegex.test(url)) {
+      return res.status(400).json({ error: 'URL YouTube invalide' });
+    }
+
+    console.log(`Téléchargement YouTube démarré: ${url}`);
+    
+    // Générer un nom de fichier unique
+    const filename = `${uuidv4()}.%(ext)s`;
+    const outputPath = path.join(YOUTUBE_CACHE_DIR, filename);
+
+    try {
+      // Options pour yt-dlp
+      const ytDlpOptions = [
+        '--extract-audio',
+        '--audio-format', 'mp3',
+        '--audio-quality', '192K',
+        '--output', outputPath,
+        '--no-playlist',
+        '--max-filesize', '50M',
+        url
+      ];
+
+      // Exécuter yt-dlp
+      await ytDlpWrap.execPromise(ytDlpOptions);
+
+      // Trouver le fichier téléchargé (yt-dlp remplace %(ext)s par l'extension réelle)
+      const files = fs.readdirSync(YOUTUBE_CACHE_DIR);
+      const downloadedFile = files.find(file => file.startsWith(filename.replace('.%(ext)s', '')));
+
+      if (!downloadedFile) {
+        throw new Error('Fichier téléchargé introuvable');
+      }
+
+      // Obtenir les métadonnées de la vidéo
+      let videoTitle = 'Audio YouTube';
+      try {
+        const metadataOptions = [
+          '--print', 'title',
+          '--no-download',
+          url
+        ];
+        const titleResult = await ytDlpWrap.execPromise(metadataOptions);
+        videoTitle = titleResult.trim() || 'Audio YouTube';
+      } catch (metaError) {
+        console.log('Impossible de récupérer le titre, utilisation du titre par défaut');
+      }
+
+      const song = {
+        id: uuidv4(),
+        filename: downloadedFile,
+        originalName: `${videoTitle}.mp3`,
+        path: `/youtube/${downloadedFile}`,
+        uploadedAt: new Date().toISOString(),
+        source: 'youtube',
+        youtubeUrl: url
+      };
+
+      room.addToQueue(song);
+
+      // Notifier tous les utilisateurs de la salle
+      io.to(roomId).emit('roomUpdate', room.getRoomState());
+      
+      // Mettre à jour la liste des salles pour tous
+      broadcastRoomsList();
+
+      console.log(`Téléchargement terminé: ${videoTitle}`);
+
+      res.json({ 
+        message: 'Audio YouTube téléchargé avec succès', 
+        song: song,
+        roomState: room.getRoomState()
+      });
+
+    } catch (ytDlpError) {
+      console.error('Erreur yt-dlp:', ytDlpError);
+      
+      // Messages d'erreur plus spécifiques
+      let errorMessage = 'Erreur lors du téléchargement';
+      if (ytDlpError.message.includes('Video unavailable')) {
+        errorMessage = 'Vidéo non disponible ou privée';
+      } else if (ytDlpError.message.includes('too large')) {
+        errorMessage = 'Fichier trop volumineux (max 50MB)';
+      } else if (ytDlpError.message.includes('No such file')) {
+        errorMessage = 'URL invalide ou contenu non accessible';
+      }
+      
+      return res.status(400).json({ error: errorMessage });
+    }
+
+  } catch (error) {
+    console.error('Erreur téléchargement YouTube:', error);
+    res.status(500).json({ error: 'Erreur serveur lors du téléchargement' });
   }
 });
 
