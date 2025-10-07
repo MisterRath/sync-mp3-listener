@@ -1,0 +1,11 @@
+# Netscape HTTP Cookie File
+# This is a generated file! Do not edit.
+
+# To use your own cookies:
+# 1. Install a browser extension like "Get cookies.txt LOCALLY" 
+# 2. Go to YouTube and make sure you're logged in
+# 3. Export cookies for youtube.com
+# 4. Replace this file with your exported cookies
+
+# Exemple de format (remplacez par vos vrais cookies):
+# .youtube.com	TRUE	/	FALSE	1234567890	session_token	your_session_token_here
